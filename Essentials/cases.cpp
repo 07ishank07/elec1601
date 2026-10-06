@@ -128,7 +128,7 @@ void doCase3() {
     delay((3.141 * length / (4 * 4.71)) * 1000);
     servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(1500); 
-    case2 = false; 
+    case3 = false; 
     int distMid = irDistance(irLedPinMid, irReceiverPinMid);
     int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
     int distRight = irDistance(irLedPinRight, irReceiverPinRight);
