@@ -16,6 +16,7 @@ const int redLedPinLeft = A2;
 bool case1 = true;
 bool case2 = true;
 bool case3 = true;
+bool deadEndCompleted = false;
 const double length = 1; //placeholder need to change
 //keep above
 
@@ -60,8 +61,10 @@ void loop() // Main loop auto-repeats
     else if (distMid >= 2 && distMid <= 3 && case3 && distRight >= 2 && distRight <= 3 && distLeft >= 5) { //left turn
         doCase3();
     }
-
-}
+    else if (distLeft >= 4 && distMid >= 4 && distRight >= 4 &&!deadEndCompleted) 
+    {
+    doDeadEnd();
+    }
 
 int irDetect(int irLedPin, int irReceiverPin, long frequency)
 {
@@ -141,4 +144,27 @@ void doCase3() {
     }
     servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(1500);
+}
+
+void doDeadEnd() {
+    digitalWrite(redLedPinMid, LOW);
+    digitalWrite(redLedPinLeft, HIGH);
+    digitalWrite(redLedPinRight, LOW);
+
+    // Turn 180 degrees
+    servoLeft.writeMicroseconds(1475);
+    servoRight.writeMicroseconds(1475);
+
+    delay((3.141 * length / (2 * 4.71)) * 1000);
+    servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
+    servoRight.writeMicroseconds(1500); 
+    delay(100)
+    servoLeft.writeMicroseconds(1475);
+    servoRight.writeMicroseconds(1525);
+    delay (1000)
+    servoLeft.writeMicroseconds(1500);
+    servoRight.writeMicroseconds(1500);
+
+    deadEndCompleted = true;
+    
 }
