@@ -1,23 +1,3 @@
-/*
-What you must display:
-LED-R Right (A0): ON 
-LED-R Mid (A1): OFF
-LED-R Left (A2): OFF
-(After this, your LEDs can do what you want)
-What your robot must check:
-Both left and right sensors should identify a similar reading
-You can choose how you measure this. Calibrating your sensors to measure distance is advised
-The forward sensor should see no wall, or a wall at least 10cm away.
-Once again, calibrating your sensors to measure distance is advised
-What your robot must do to:
-It must move 5cm forward
-It must remain approximately parallel to the walls
-The center of the robot must remain within 3cm of the center of the corridor
-Stop after completion
-Why this scenario is important:
-This is the main way your robot should move (along a corridor in a straight line)
-*/
-
 #include <Servo.h> // Include servo library
 Servo servoLeft;
 Servo servoRight;
@@ -34,6 +14,8 @@ const int irLedPinLeft = 10;
 const int irReceiverPinLeft = 11;
 const int redLedPinLeft = A2;
 bool case1 = true;
+bool case2 = true;
+const double length = 1;
 //keep above
 
 void setup() // Built in initialization block
@@ -62,21 +44,17 @@ void loop() // Main loop auto-repeats
     int distMid = irDistance(irLedPinMid, irReceiverPinMid);
     int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
     int distRight = irDistance(irLedPinRight, irReceiverPinRight);
+    Serial.println(distMid);
+    Serial.println(distLeft);
+    Serial.println(distRight);
 
-    //Note dist gives a num between 0 and 5 to note the distance of the wall, 0 being closest and 5 being farthest away
+    //Note dist gives a num between 0 and 5 to note the distance of the wall, 0 being farthest away and 5 being closest
     // Case 1
-    if (distMid >= 4 && case1 && abs(distLeft - distRight) <= 1)  {
-
-        digitalWrite(redLedPinMid, LOW);
-        digitalWrite(redLedPinLeft, LOW);
-        digitalWrite(redLedPinRight, HIGH);
-        servoLeft.writeMicroseconds(1475); //stop, adjust wheels since it will still move forward a bit
-        servoRight.writeMicroseconds(1525);
-        delay((5/4.71) * 1000);
-        servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
-        servoRight.writeMicroseconds(1500); 
-        case1 = false;
-
+    if (distMid >= 1 && case1 && abs(distLeft - distRight) <= 1)  {
+        doCase1();
+    }
+    else if (distMid >= 2 && distMid <= 3 && case2 && distLeft >= 2 && distLeft <= 3 && distRight == 0) { //Ishaanis nightmare fuel
+        doCase2();
     }
 
 }
@@ -101,15 +79,33 @@ int irDistance(int irLedPin, int irReceiverPin)
    return distance;
 }
 
+void doCase1() {
+    digitalWrite(redLedPinMid, LOW);
+    digitalWrite(redLedPinLeft, LOW);
+    digitalWrite(redLedPinRight, HIGH);
+    servoLeft.writeMicroseconds(1475); //stop, adjust wheels since it will still move forward a bit
+    servoRight.writeMicroseconds(1525);
+    delay((5/4.71) * 1000);
+    servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
+    servoRight.writeMicroseconds(1500); 
+    case1 = false;
+}
 
-/* 
-things to test:
-
-the servo value that means forward for each wheel
-whether a bigger irDistance really means farther
-the forward sensor's "10 cm or more" threshold
-the wheel speed v, which sets the drive time t = d/v
-the tolerance $\varepsilon$ for "similar"
-
-
-*/
+void doCase2() {
+    digitalWrite(redLedPinMid, HIGH);
+    digitalWrite(redLedPinLeft, LOW);
+    digitalWrite(redLedPinRight, LOW);
+    servoLeft.writeMicroseconds(1475);
+    servoRight.writeMicroseconds(1475);
+    delay((3.141 * length / (4 * 4.71)) * 1000);
+    servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
+    servoRight.writeMicroseconds(1500); 
+    case2 = false; 
+    while (!(distMid >= 1 && abs(distLeft - distRight) <= 1)) {
+        servoLeft.writeMicroseconds(1475);
+        servoRight.writeMicroseconds(1525);
+    }
+    servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
+    servoRight.writeMicroseconds(1500);
+    case1 = true;
+}
