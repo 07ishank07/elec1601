@@ -57,8 +57,7 @@ void setup() // Built in initialization block
 
 void loop() // Main loop auto-repeats
 {
-    servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
-    servoRight.writeMicroseconds(1500); 
+
 
     int distMid = irDistance(irLedPinMid, irReceiverPinMid);
     int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
@@ -66,7 +65,7 @@ void loop() // Main loop auto-repeats
 
     //Note dist gives a num between 0 and 5 to note the distance of the wall, 0 being closest and 5 being farthest away
     // Case 1
-    if (distMid >= 4 && case1 && distLeft - distRight == 0)  {
+    if (distMid >= 4 && case1 && abs(distLeft - distRight) <= 1)  {
 
         digitalWrite(redLedPinMid, LOW);
         digitalWrite(redLedPinLeft, LOW);
@@ -74,7 +73,9 @@ void loop() // Main loop auto-repeats
         servoLeft.writeMicroseconds(1475); //stop, adjust wheels since it will still move forward a bit
         servoRight.writeMicroseconds(1525);
         delay((5/4.71) * 1000);
-        case1 = false
+        servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
+        servoRight.writeMicroseconds(1500); 
+        case1 = false;
 
     }
 
