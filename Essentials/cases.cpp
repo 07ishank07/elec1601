@@ -15,7 +15,8 @@ const int irReceiverPinLeft = 11;
 const int redLedPinLeft = A2;
 bool case1 = true;
 bool case2 = true;
-const double length = 1;
+bool case3 = true;
+const double length = 1; //placeholder need to change
 //keep above
 
 void setup() // Built in initialization block
@@ -50,11 +51,14 @@ void loop() // Main loop auto-repeats
 
     //Note dist gives a num between 0 and 5 to note the distance of the wall, 0 being farthest away and 5 being closest
     // Case 1
-    if (distMid >= 1 && case1 && abs(distLeft - distRight) <= 1)  {
+    if (distMid >= 4 && case1 && abs(distLeft - distRight) <= 1)  {
         doCase1();
     }
-    else if (distMid >= 2 && distMid <= 3 && case2 && distLeft >= 2 && distLeft <= 3 && distRight == 0) { //Ishaanis nightmare fuel
+    else if (distMid >= 2 && distMid <= 3 && case2 && distLeft >= 2 && distLeft <= 3 && distRight >= 5) { //right turn
         doCase2();
+    }
+    else if (distMid >= 2 && distMid <= 3 && case3 && distRight >= 2 && distRight <= 3 && distLeft >= 5) { //left turn
+        doCase3();
     }
 
 }
@@ -101,7 +105,26 @@ void doCase2() {
     servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(1500); 
     case2 = false; 
-    while (!(distMid >= 1 && abs(distLeft - distRight) <= 1)) {
+    while (!(distMid >= 4 && abs(distLeft - distRight) <= 1)) {
+        servoLeft.writeMicroseconds(1475);
+        servoRight.writeMicroseconds(1525);
+    }
+    servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
+    servoRight.writeMicroseconds(1500);
+    case1 = true;
+}
+
+void doCase3() {
+    digitalWrite(redLedPinMid, HIGH);
+    digitalWrite(redLedPinLeft, LOW);
+    digitalWrite(redLedPinRight, HIGH);
+    servoLeft.writeMicroseconds(1525);
+    servoRight.writeMicroseconds(1525);
+    delay((3.141 * length / (4 * 4.71)) * 1000);
+    servoLeft.writeMicroseconds(1500); //stop, adjust wheels since it will still move forward a bit
+    servoRight.writeMicroseconds(1500); 
+    case2 = false; 
+    while (!(distMid >= 4 && abs(distLeft - distRight) <= 1)) {
         servoLeft.writeMicroseconds(1475);
         servoRight.writeMicroseconds(1525);
     }
