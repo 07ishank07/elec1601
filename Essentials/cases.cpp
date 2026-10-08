@@ -1,4 +1,8 @@
+
+
 #include <Servo.h> // Include servo library
+
+
 Servo servoLeft;
 Servo servoRight;
 // Right IR LED/receiver pair
@@ -18,8 +22,10 @@ bool case2 = true;
 bool case3 = true;
 bool deadEndCompleted = false;
 const double length = 1; //placeholder need to change
-const int leftStop = 1500;
-const int  rightStop = 1500;
+const int leftStop = 1495;
+const int  rightStop = 1497;
+const int leftGo = 1525;
+const int rightGo = 1469; 
 //keep above
 
 void setup() // Built in initialization block
@@ -44,20 +50,22 @@ void setup() // Built in initialization block
 void loop() // Main loop auto-repeats
 {
 
-
     int distMid = irDistance(irLedPinMid, irReceiverPinMid);
     int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
     int distRight = irDistance(irLedPinRight, irReceiverPinRight);
+    
     Serial.println(distMid);
-    Serial.println(distLeft);
-    Serial.println(distRight);
+    //Serial.println(distLeft);
+    //Serial.println(distRight);
 
     //Note dist gives a num between 0 and 5 to note the distance of the wall, 5 being farthest away and 0 being closest
     // Case 1
-    if (distMid >= 4 && case1 && abs(distLeft - distRight) <= 1)  {
+    if (distMid >= 4 && abs(distLeft - distRight) <= 1)  {
         goStraight();
     }
-    else if (distMid >= 2 && distMid <= 3 && case2 && distLeft >= 2 && distLeft <= 3 && distRight >= 5) { //right turn
+
+    
+    /*else if (distMid >= 2 && distMid <= 3 && case2 && distLeft >= 2 && distLeft <= 3 && distRight >= 5) { //right turn
         turnRight();
     }
     else if (distMid >= 2 && distMid <= 3 && case3 && distRight >= 2 && distRight <= 3 && distLeft >= 5) { //left turn
@@ -67,6 +75,7 @@ void loop() // Main loop auto-repeats
     {
         deadEnd();
     }
+    */
 }
 
 int irDetect(int irLedPin, int irReceiverPin, long frequency)
@@ -94,8 +103,8 @@ void goStraight() {
     digitalWrite(redLedPinMid, LOW);
     digitalWrite(redLedPinLeft, LOW);
     digitalWrite(redLedPinRight, HIGH);
-    servoLeft.writeMicroseconds(1475); //stop, adjust wheels since it will still move forward a bit
-    servoRight.writeMicroseconds(1525);
+    servoLeft.writeMicroseconds(leftGo); //stop, adjust wheels since it will still move forward a bit
+    servoRight.writeMicroseconds(rightGo);
     delay((5/4.71) * 1000);
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
@@ -165,10 +174,10 @@ void deadEnd() {
     delay((3.141 * length / (2 * 4.71)) * 1000);
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
-    delay(100)
+    delay(100);
     servoLeft.writeMicroseconds(1475);
     servoRight.writeMicroseconds(1525);
-    delay (1000)
+    delay(1000);
     servoLeft.writeMicroseconds(leftStop);
     servoRight.writeMicroseconds(rightStop);
 
