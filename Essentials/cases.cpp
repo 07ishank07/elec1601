@@ -64,7 +64,9 @@ void loop() // Main loop auto-repeats
         goStraight();
     }
 
-    
+    else if (distLeft < distRight) { // left side is closer to wall
+    leftStart();
+}
     else if (distMid >= 2 && distMid <= 3 && distLeft >= 2 && distLeft <= 3 && distRight >= 4) { //right turn
         turnRight();
     }
@@ -184,4 +186,45 @@ void deadEnd() {
 
     deadEndCompleted = true;
     
+}
+void leftStart(){
+    void leftStart() {
+
+    digitalWrite(redLedPinMid, LOW);
+    digitalWrite(redLedPinLeft, HIGH);
+    digitalWrite(redLedPinRight, HIGH);
+
+    // Rotate clockwise slightly
+    servoLeft.writeMicroseconds(1525);
+    servoRight.writeMicroseconds(1525);
+    delay(200);
+
+    // Move forward until approximately centred
+    int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
+    int distRight = irDistance(irLedPinRight, irReceiverPinRight);
+
+    while (!(distRight - distLeft <= 1)) {
+        servoLeft.writeMicroseconds(leftGo);
+        servoRight.writeMicroseconds(rightGo);
+
+        distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
+        distRight = irDistance(irLedPinRight, irReceiverPinRight);
+    }
+
+    // Stop
+    servoLeft.writeMicroseconds(leftStop);
+    servoRight.writeMicroseconds(rightStop);
+
+    delay(100);
+
+    // Rotate anticlockwise to become parallel again
+    servoLeft.writeMicroseconds(1475);
+    servoRight.writeMicroseconds(1475);
+    delay(200);
+
+    // Stop
+    servoLeft.writeMicroseconds(leftStop);
+    servoRight.writeMicroseconds(rightStop);
+}
+
 }
