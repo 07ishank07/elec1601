@@ -21,11 +21,11 @@ bool case1 = true;
 bool case2 = true;
 bool case3 = true;
 bool deadEndCompleted = false;
-const double length = 1; //placeholder need to change
+const double length = 11; //placeholder need to change
 const int leftStop = 1495;
 const int  rightStop = 1497;
 const int leftGo = 1525;
-const int rightGo = 1469; 
+const int rightGo = 1468; 
 //keep above
 
 void setup() // Built in initialization block
@@ -60,25 +60,29 @@ void loop() // Main loop auto-repeats
 
     //Note dist gives a num between 0 and 5 to note the distance of the wall, 5 being farthest away and 0 being closest
     // Case 1
-    if (distMid >= 4)  {
+    if (distLeft < distRight) { // left side is closer to wall
+        leftStart();
+    }
+
+    else if (distMid >= 4)  {
         goStraight();
     }
 
-    else if (distLeft < distRight) { // left side is closer to wall
-    leftStart();
-}
-    else if (distMid >= 2 && distMid <= 3 && distLeft >= 2 && distLeft <= 3 && distRight >= 4) { //right turn
+    
+    else if (distMid <= 3 && distLeft <= 3 && distRight >= 4) { //right turn
         turnRight();
     }
 
-    /*else if (distMid >= 2 && distMid <= 3 && case3 && distRight >= 2 && distRight <= 3 && distLeft >= 5) { //left turn
+    else if (distMid <= 3 && distRight <= 3 && distLeft >= 4) { //left turn
         turnLeft();
     }
-    else if (distLeft >= 4 && distMid >= 4 && distRight >= 4 &&!deadEndCompleted) 
+
+    
+    else if (distLeft <= 3 && distMid <= 3 && distRight <= 3) 
     {
         deadEnd();
     }
-    */
+    
 }
 
 int irDetect(int irLedPin, int irReceiverPin, long frequency)
@@ -103,11 +107,19 @@ int irDistance(int irLedPin, int irReceiverPin)
 
 // Scenario 1
 void goStraight() {
+/*
+    int distMid = irDistance(irLedPinMid, irReceiverPinMid);
+    int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
+    int distRight = irDistance(irLedPinRight, irReceiverPinRight);
+*/
     digitalWrite(redLedPinMid, LOW);
     digitalWrite(redLedPinLeft, LOW);
     digitalWrite(redLedPinRight, HIGH);
+
+    //while ((disMid >= 2 && distMid <=5)){
     servoLeft.writeMicroseconds(leftGo); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightGo);
+    //}
     delay((5/4.71) * 1000);
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
@@ -119,22 +131,22 @@ void turnRight() {
     digitalWrite(redLedPinMid, HIGH);
     digitalWrite(redLedPinLeft, LOW);
     digitalWrite(redLedPinRight, LOW);
-    servoLeft.writeMicroseconds(1475);
-    servoRight.writeMicroseconds(1475);
-    delay((3.141 * length / (4 * 4.71)) * 1000);
+    servoLeft.writeMicroseconds(1525);
+    servoRight.writeMicroseconds(1533);
+    delay(1400); //(3.141 * length / (4 * 4.71)) * 1000
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
     case2 = false; 
-    int distMid = irDistance(irLedPinMid, irReceiverPinMid);
+    /*int distMid = irDistance(irLedPinMid, irReceiverPinMid);
     int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
     int distRight = irDistance(irLedPinRight, irReceiverPinRight);
     while (!(distMid >= 4 && abs(distLeft - distRight) <= 1)) {
-        servoLeft.writeMicroseconds(1475);
-        servoRight.writeMicroseconds(1525);
+        servoLeft.writeMicroseconds(leftGo); //stop, adjust wheels since it will still move forward a bit
+        servoRight.writeMicroseconds(rightGo);
         distMid = irDistance(irLedPinMid, irReceiverPinMid);
         distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
         distRight = irDistance(irLedPinRight, irReceiverPinRight);
-    }
+    }*/
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop);
 }
@@ -144,13 +156,13 @@ void turnLeft() {
     digitalWrite(redLedPinMid, HIGH);
     digitalWrite(redLedPinLeft, LOW);
     digitalWrite(redLedPinRight, HIGH);
-    servoLeft.writeMicroseconds(1525);
-    servoRight.writeMicroseconds(1525);
-    delay((3.141 * length / (4 * 4.71)) * 1000);
+    servoLeft.writeMicroseconds(1475);
+    servoRight.writeMicroseconds(1467);
+    delay(1400);
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
     case3 = false; 
-    int distMid = irDistance(irLedPinMid, irReceiverPinMid);
+    /*int distMid = irDistance(irLedPinMid, irReceiverPinMid);
     int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
     int distRight = irDistance(irLedPinRight, irReceiverPinRight);
     while (!(distMid >= 4 && abs(distLeft - distRight) <= 1)) {
@@ -159,7 +171,7 @@ void turnLeft() {
         distMid = irDistance(irLedPinMid, irReceiverPinMid);
         distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
         distRight = irDistance(irLedPinRight, irReceiverPinRight);
-    }
+    }*/
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop);
 }
@@ -171,24 +183,21 @@ void deadEnd() {
     digitalWrite(redLedPinRight, LOW);
 
     // Turn 180 degrees
-    servoLeft.writeMicroseconds(1475);
-    servoRight.writeMicroseconds(1475);
+    servoLeft.writeMicroseconds(1525);
+    servoRight.writeMicroseconds(1533);
 
-    delay((3.141 * length / (2 * 4.71)) * 1000);
+    delay(2800);
+
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
-    delay(100);
-    servoLeft.writeMicroseconds(1475);
-    servoRight.writeMicroseconds(1525);
-    delay(1000);
-    servoLeft.writeMicroseconds(leftStop);
-    servoRight.writeMicroseconds(rightStop);
+    
 
     deadEndCompleted = true;
     
 }
-void leftStart(){
-    void leftStart() {
+
+
+void leftStart() {
 
     digitalWrite(redLedPinMid, LOW);
     digitalWrite(redLedPinLeft, HIGH);
@@ -227,4 +236,3 @@ void leftStart(){
     servoRight.writeMicroseconds(rightStop);
 }
 
-}
