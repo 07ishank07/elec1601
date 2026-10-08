@@ -55,20 +55,21 @@ void loop() // Main loop auto-repeats
     int distRight = irDistance(irLedPinRight, irReceiverPinRight);
     
     Serial.println(distMid);
-    //Serial.println(distLeft);
+    //Serial.   println(distLeft);
     //Serial.println(distRight);
 
     //Note dist gives a num between 0 and 5 to note the distance of the wall, 5 being farthest away and 0 being closest
     // Case 1
-    if (distMid >= 4 && abs(distLeft - distRight) <= 1)  {
+    if (distMid >= 4)  {
         goStraight();
     }
 
     
-    /*else if (distMid >= 2 && distMid <= 3 && case2 && distLeft >= 2 && distLeft <= 3 && distRight >= 5) { //right turn
+    else if (distMid >= 2 && distMid <= 3 && distLeft >= 2 && distLeft <= 3 && distRight >= 4) { //right turn
         turnRight();
     }
-    else if (distMid >= 2 && distMid <= 3 && case3 && distRight >= 2 && distRight <= 3 && distLeft >= 5) { //left turn
+
+    /*else if (distMid >= 2 && distMid <= 3 && case3 && distRight >= 2 && distRight <= 3 && distLeft >= 5) { //left turn
         turnLeft();
     }
     else if (distLeft >= 4 && distMid >= 4 && distRight >= 4 &&!deadEndCompleted) 
