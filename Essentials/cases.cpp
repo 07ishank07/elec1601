@@ -76,7 +76,7 @@ void loop() // Main loop auto-repeats
 
     //Note dist gives a num between 0 and 5 to note the distance of the wall, 5 being farthest away and 0 being closest
     // Case 1
-    if (distLeft < distRight) { // left side is closer to wall
+    if (distLeft <= 2 && distRight-distLeft >= 2 && distMid >= 4) { // start position is closer to the wall
         leftStart();
     }
 
@@ -151,11 +151,14 @@ void turnRight() {
     digitalWrite(redLedPinMid, HIGH);
     digitalWrite(redLedPinLeft, LOW);
     digitalWrite(redLedPinRight, LOW);
+
     setWheels(L_CW, R_CW);
     delay(scaled(1400)); //(3.141 * length / (4 * 4.71)) * 1000
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
+
     case2 = false; 
+
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop);
 }
@@ -167,9 +170,11 @@ void turnLeft() {
     digitalWrite(redLedPinRight, HIGH);
     setWheels(L_CCW, R_CCW);
     delay(scaled(1400));
+
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
     case3 = false; 
+    
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop);
 }
@@ -193,7 +198,7 @@ void deadEnd() {
     
 }
 
-//Scenario 5
+//scen 5
 void leftStart() {
 
     digitalWrite(redLedPinMid, LOW);
@@ -210,7 +215,9 @@ void leftStart() {
 
     unsigned long startTime = millis();
 
-    while (!(distRight - distLeft <= 1) && (millis() - startTime < scaled(LEFT_START_TIMEOUT_MS))) {
+    while (!(distRight - distLeft <= 1) &&
+           (millis() - startTime < scaled(LEFT_START_TIMEOUT_MS))) {
+
         setWheels(L_FWD, R_FWD);
 
         distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
@@ -218,19 +225,21 @@ void leftStart() {
     }
 
     // Stop
-    servoLeft.writeMicroseconds(leftStop);
-    servoRight.writeMicroseconds(rightStop);
-
+    setWheels(leftStop, rightStop);
     delay(100);
 
     // Rotate anticlockwise to become parallel again
     setWheels(L_CCW, R_CCW);
     delay(scaled(200));
 
-    //reverse to bring it back
-    
-
     // Stop
-    servoLeft.writeMicroseconds(leftStop);
-    servoRight.writeMicroseconds(rightStop);
+    setWheels(leftStop, rightStop);
+    delay(100);
+
+    // Reverse to approximately return to the starting position
+    setWheels(L_REV, R_REV);
+    delay(scaled(200));
+
+    // Final stop
+    setWheels(leftStop, rightStop);
 }
