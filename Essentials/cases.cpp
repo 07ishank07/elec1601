@@ -76,15 +76,16 @@ void loop() // Main loop auto-repeats
 
     //Note dist gives a num between 0 and 5 to note the distance of the wall, 5 being farthest away and 0 being closest
     // Case 1
-    if (distLeft <= 2 && distRight-distLeft >= 2 && distMid >= 4) { // start position is closer to the wall
+    if (distLeft <= 1 && distRight-distLeft >= 2 && distMid >= 4 && distRight <= 3 ) { // start position is closer to the wall
         leftStart();
     }
-
+    else if (distRight <= 1 && distLeft - distRight >= 2 && distMid >= 4 && distLeft <= 3) {
+        rightStart();
+    }
     else if (distMid >= 4)  {
         goStraight();
     }
-
-    
+ 
     else if (distMid <= 3 && distLeft <= 3 && distRight >= 4) { //right turn
         turnRight();
     }
@@ -93,7 +94,6 @@ void loop() // Main loop auto-repeats
         turnLeft();
     }
 
-    
     else if (distLeft <= 3 && distMid <= 3 && distRight <= 3) 
     {
         deadEnd();
@@ -207,16 +207,13 @@ void leftStart() {
 
     // Rotate clockwise slightly
     setWheels(L_CW, R_CW);
-    delay(scaled(200));
+    delay(scaled(400));
 
     // Move forward until approximately centred
     int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
     int distRight = irDistance(irLedPinRight, irReceiverPinRight);
 
-    unsigned long startTime = millis();
-
-    while (!(distRight - distLeft <= 1) &&
-           (millis() - startTime < scaled(LEFT_START_TIMEOUT_MS))) {
+    while (!(distRight - distLeft <= 1)) {
 
         setWheels(L_FWD, R_FWD);
 
@@ -230,7 +227,7 @@ void leftStart() {
 
     // Rotate anticlockwise to become parallel again
     setWheels(L_CCW, R_CCW);
-    delay(scaled(200));
+    delay(scaled(400));
 
     // Stop
     setWheels(leftStop, rightStop);
@@ -238,8 +235,51 @@ void leftStart() {
 
     // Reverse to approximately return to the starting position
     setWheels(L_REV, R_REV);
-    delay(scaled(200));
+    delay(scaled(1000));
 
     // Final stop
     setWheels(leftStop, rightStop);
+    
+}
+void rightStart() {
+
+    digitalWrite(redLedPinMid, HIGH);
+    digitalWrite(redLedPinLeft, HIGH);
+    digitalWrite(redLedPinRight, LOW);
+
+    // Rotate anticlockwise slightly
+    setWheels(L_CCW, R_CCW);
+    delay(scaled(400));
+
+    // Move forward until approximately centred
+    int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
+    int distRight = irDistance(irLedPinRight, irReceiverPinRight);
+
+
+    while (!(distLeft - distRight <= 1)) {
+
+        setWheels(L_FWD, R_FWD);
+
+        distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
+        distRight = irDistance(irLedPinRight, irReceiverPinRight);
+    }
+
+    // Stop
+    setWheels(0, 0);
+    delay(100);
+
+    // Rotate clockwise to become parallel again
+    setWheels(L_CW, R_CW);
+    delay(scaled(400));
+
+    // Stop
+    setWheels(0, 0);
+    delay(100);
+
+    // Reverse to approximately return to the starting position
+    setWheels(L_REV, R_REV);
+    delay(scaled(1000));
+
+    // Final stop
+    setWheels(0, 0);
 }
