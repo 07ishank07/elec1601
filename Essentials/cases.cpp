@@ -193,7 +193,7 @@ void deadEnd() {
     
 }
 
-//scen 5
+//Scenario 5
 void leftStart() {
 
     digitalWrite(redLedPinMid, LOW);
