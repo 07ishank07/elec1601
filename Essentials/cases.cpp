@@ -132,11 +132,7 @@ unsigned long scaled(unsigned long t0) {
 
 // Scenario 1
 void goStraight() {
-/*
-    int distMid = irDistance(irLedPinMid, irReceiverPinMid);
-    int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
-    int distRight = irDistance(irLedPinRight, irReceiverPinRight);
-*/
+
     digitalWrite(redLedPinMid, LOW);
     digitalWrite(redLedPinLeft, LOW);
     digitalWrite(redLedPinRight, HIGH);
@@ -160,16 +156,6 @@ void turnRight() {
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
     case2 = false; 
-    /*int distMid = irDistance(irLedPinMid, irReceiverPinMid);
-    int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
-    int distRight = irDistance(irLedPinRight, irReceiverPinRight);
-    while (!(distMid >= 4 && abs(distLeft - distRight) <= 1)) {
-        servoLeft.writeMicroseconds(leftGo); //stop, adjust wheels since it will still move forward a bit
-        servoRight.writeMicroseconds(rightGo);
-        distMid = irDistance(irLedPinMid, irReceiverPinMid);
-        distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
-        distRight = irDistance(irLedPinRight, irReceiverPinRight);
-    }*/
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop);
 }
@@ -184,16 +170,6 @@ void turnLeft() {
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
     case3 = false; 
-    /*int distMid = irDistance(irLedPinMid, irReceiverPinMid);
-    int distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
-    int distRight = irDistance(irLedPinRight, irReceiverPinRight);
-    while (!(distMid >= 4 && abs(distLeft - distRight) <= 1)) {
-        servoLeft.writeMicroseconds(1475);
-        servoRight.writeMicroseconds(1525);
-        distMid = irDistance(irLedPinMid, irReceiverPinMid);
-        distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
-        distRight = irDistance(irLedPinRight, irReceiverPinRight);
-    }*/
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop);
 }
