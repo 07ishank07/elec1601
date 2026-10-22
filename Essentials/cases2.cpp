@@ -88,8 +88,10 @@ void loop() {
   Serial.println(distMid);
 
   // 20 cm clear corridor, approximately 8.5 cm between side sensor positions:
-  // centred side clearance is about 5.75 cm (zone 3). For straight travel,
-  // tolerate unequal detected side walls in zones 1-4 (but not 4/4).
+  // centred side clearance is about 5.75 cm (zone 3). Straight travel compares
+  // the sides within two zones, including 5/5 when wood joins are not detected.
+  // An opening on ONE side with a clearly detected opposite wall takes turn
+  // priority, even with a clear front (zone 5). 4/5 remains straight travel.
   // Correct sideways only when the near side is zone 0 (<= 1.5 cm).
   // After correction, require both sides to reach at least zone 2 before
   // finishing, so small zone fluctuations do not immediately retrigger it.
@@ -97,14 +99,18 @@ void loop() {
   // Zone 4 still detects a wall; only 5 means no detection.
   // Zones 0/1/2/3/4 end at 1.5/3/5/10/15 cm.
   int scenario = 0; // Unknown: stop the wheels, then check again next loop.
-  if (distMid >= 3 && distLeft >= 1 && distLeft <= 4 && distRight >= 1 && distRight <= 4 && (distLeft <= 3 || distRight <= 3)) scenario = 1;
-  if (distMid >= 1 && distMid <= 4 && distLeft >= 2 && distLeft <= 3 && distRight == 5) scenario = 2;
-  if (distMid >= 1 && distMid <= 4 && distRight >= 2 && distRight <= 3 && distLeft == 5) scenario = 3;
+  if (distMid >= 3 && abs(distLeft - distRight) <= 2) scenario = 1;
+  if (distMid >= 1 && distLeft >= 1 && distLeft <= 3 && distRight == 5) scenario = 2;
+  if (distMid >= 1 && distRight >= 1 && distRight <= 3 && distLeft == 5) scenario = 3;
   if (distMid <= 2 && distLeft >= 1 && distLeft <= 4 && distRight >= 1 && distRight <= 4 && (distLeft <= 3 || distRight <= 3)) scenario = 4;
   if (distMid >= 4 && distLeft == 0 && distRight >= 3 && distRight <= 4) scenario = 5;
   if (distMid >= 4 && distRight == 0 && distLeft >= 3 && distLeft <= 4) scenario = 6;
   if (distLeft <= 1 && distMid >= distLeft && distMid <= 3 && distRight >= 3 && distRight <= 4) scenario = 7;  
   if (distRight <= 1 && distMid >= distRight && distMid <= 3 && distLeft >= 3 && distLeft <= 4) scenario = 8;
+
+  // Case 1 leaves the wheels running between loop iterations. Stop as soon
+  // as any different case is selected, before its checks or movement begin.
+  if (scenario != 1) stopServos();
 
   // A single noisy side reading must not start a recentering manoeuvre.
   // Require the initial reading plus two fresh matching readings while still.
@@ -133,41 +139,52 @@ void loop() {
       stopServos();
       break;
 
-    case 1: // Forward approximately 5 cm.
+    case 1: // Keep going straight; loop() continuously checks for another case.
       setLeds(LOW, LOW, HIGH);
-      delay(1000);
       setWheels(L_FWD, R_FWD);
-      delay((unsigned long)((5.0 / FORWARD_SPEED_CM_S) * 1000));
-      stopServos();
-      break;
+      break; // No delay or stop: read the sensors again immediately.
 
     case 2: // Right 90 degrees, then forward approximately 5 cm.
+    {
       setLeds(LOW, HIGH, LOW);
-      delay(1000);
+      if (distMid >= 3) {
+        setWheels(L_FWD, R_FWD);
+        delay(500);
+      }
+
       setWheels(L_CW, R_CW);
       delay((unsigned long)((PI * WHEEL_TRACK_CM * 90.0 / (360.0 * CLOCKWISE_SPEED_CM_S)) * 950));
       stopServos();
       delay(100);
+
       setWheels(L_FWD, R_FWD);
       delay((unsigned long)((5.0 / FORWARD_SPEED_CM_S) * 1000));
       stopServos();
       break;
+    }
 
     case 3: // Mirror of case 2: left 90 degrees, then forward 5 cm.
+    {
       setLeds(LOW, HIGH, HIGH);
-      delay(1000);
+      if (distMid >= 3) {
+        setWheels(L_FWD, R_FWD);
+        delay(500);
+      }
+      
       setWheels(L_CCW, R_CCW);
       delay((unsigned long)((PI * WHEEL_TRACK_CM * 90.0 / (360.0 * ANTICLOCKWISE_SPEED_CM_S)) * 950));
       stopServos();
       delay(100);
+
       setWheels(L_FWD, R_FWD);
       delay((unsigned long)((5.0 / FORWARD_SPEED_CM_S) * 1000));
       stopServos();
       break;
+    }
 
     case 4: // Turn 180 degrees; the next loop decides the forward movement.
       setLeds(HIGH, LOW, LOW);
-      delay(1000);
+      delay(100);
       setWheels(L_CW, R_CW);
       delay((unsigned long)((PI * WHEEL_TRACK_CM * 180.0 / (360.0 * CLOCKWISE_SPEED_CM_S)) * 950));
       stopServos();
@@ -176,7 +193,7 @@ void loop() {
     case 5: // Shift away from the left wall, straighten, then return level with the start.
     {
       setLeds(HIGH, LOW, HIGH);
-      delay(1000);
+      delay(100);
       setWheels(L_CW, R_CW);
       delay((unsigned long)((PI * WHEEL_TRACK_CM * TILT_ANGLE_DEG / (360.0 * CLOCKWISE_SPEED_CM_S)) * 1000));
       stopServos();
@@ -225,7 +242,7 @@ void loop() {
     case 6: // Shift away from the right wall, straighten, then return level with the start.
     {
       setLeds(HIGH, HIGH, LOW);
-      delay(1000);
+      delay(100);
       setWheels(L_CCW, R_CCW);
       delay((unsigned long)((PI * WHEEL_TRACK_CM * TILT_ANGLE_DEG / (360.0 * ANTICLOCKWISE_SPEED_CM_S)) * 1000));
       stopServos();
@@ -274,7 +291,7 @@ void loop() {
     case 7: // Turn clockwise until facing along the corridor, without centering.
     {
       setLeds(HIGH, HIGH, HIGH);
-      delay(1000);
+      delay(100);
       unsigned long startTime = millis();
       // Approximate heading check: clear front and both side walls detected.
       // IR zones cannot prove exact parallel alignment. Limit a failed turn
