@@ -40,6 +40,8 @@ const int rightStop = 1492;
 // Offsets in us from each stop pulse, calibrated at speedScale = 1.0
 const int L_FWD =  37;   // 1525 - 1495
 const int R_FWD = -35;   // 1468 - 1497
+const int STEERING_US_PER_ZONE = 3; // Gentle correction towards equal side readings.
+const int MAX_STEERING_US = 6;      // Limit the correction so both wheels stay forward.
 
 const int L_REV = -37;   // starts as the mirror of forward; tune it
 const int R_REV =  35;
@@ -92,7 +94,7 @@ void loop() {
   // the sides within two zones, including 5/5 when wood joins are not detected.
   // An opening on ONE side with a clearly detected opposite wall takes turn
   // priority, even with a clear front (zone 5). 4/5 remains straight travel.
-  // Correct sideways only when the near side is zone 0 (<= 1.5 cm).
+  // Steer gently in case 1; use a separate sideways shift at zone 0 (<= 1.5 cm).
   // After correction, require both sides to reach at least zone 2 before
   // finishing, so small zone fluctuations do not immediately retrigger it.
   // This is a practical tolerance, not a precise measurement of centering.
@@ -140,16 +142,24 @@ void loop() {
       break;
 
     case 1: // Keep going straight; loop() continuously checks for another case.
+    {
       setLeds(LOW, LOW, HIGH);
-      setWheels(L_FWD, R_FWD);
+      int correction = 0;
+      if (distLeft < 5 && distRight < 5) { // Only balance when both walls are detected.
+        correction = constrain((distRight - distLeft) * STEERING_US_PER_ZONE,
+                               -MAX_STEERING_US, MAX_STEERING_US);
+      }
+      // Positive correction steers right: left faster, right less negative/slower.
+      setWheels(L_FWD + correction, R_FWD + correction);
       break; // No delay or stop: read the sensors again immediately.
+    }
 
     case 2: // Right 90 degrees, then forward approximately 5 cm.
     {
       setLeds(LOW, HIGH, LOW);
       if (distMid >= 3) {
         setWheels(L_FWD, R_FWD);
-        delay(500);
+        delay(1500); // Placeholder: existing 500 ms approach plus 1 second forward.
       }
 
       setWheels(L_CW, R_CW);
@@ -168,7 +178,7 @@ void loop() {
       setLeds(LOW, HIGH, HIGH);
       if (distMid >= 3) {
         setWheels(L_FWD, R_FWD);
-        delay(500);
+        delay(1500); // Placeholder: existing 500 ms approach plus 1 second forward.
       }
       
       setWheels(L_CCW, R_CCW);
