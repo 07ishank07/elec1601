@@ -40,8 +40,6 @@ const int R_CCW = -30;   // 1467 - 1497
 
 float speedScale = 1.0; 
 
-
-
 //keep above
 
 void setup() // Built in initialization block
@@ -75,8 +73,12 @@ void loop() // Main loop auto-repeats
     //Serial.println(distRight);
 
     //Note dist gives a num between 0 and 5 to note the distance of the wall, 5 being farthest away and 0 being closest
+    // Scenario 7: only possible at the start line
+    if (distMid <= 3 && distLeft <= 3 && distRight >= 4) { //change
+        LeftWallAtAngle();
+    }
     // Case 1
-    if (distLeft <= 2 && distRight-distLeft >= 2 && distMid >= 4) { // start position is closer to the wall
+    else if (distLeft < distRight) { // left side is closer to wall
         leftStart();
     }
 
@@ -84,7 +86,6 @@ void loop() // Main loop auto-repeats
         goStraight();
     }
 
-    
     else if (distMid <= 3 && distLeft <= 3 && distRight >= 4) { //right turn
         turnRight();
     }
@@ -93,12 +94,12 @@ void loop() // Main loop auto-repeats
         turnLeft();
     }
 
-    
-    else if (distLeft <= 3 && distMid <= 3 && distRight <= 3) 
+    else if (distLeft <= 3 && distMid <= 3 && distRight <= 3)
     {
         deadEnd();
     }
-    
+
+
 }
 
 int irDetect(int irLedPin, int irReceiverPin, long frequency)
@@ -151,14 +152,11 @@ void turnRight() {
     digitalWrite(redLedPinMid, HIGH);
     digitalWrite(redLedPinLeft, LOW);
     digitalWrite(redLedPinRight, LOW);
-
     setWheels(L_CW, R_CW);
     delay(scaled(1400)); //(3.141 * length / (4 * 4.71)) * 1000
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
-
     case2 = false; 
-
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop);
 }
@@ -170,11 +168,9 @@ void turnLeft() {
     digitalWrite(redLedPinRight, HIGH);
     setWheels(L_CCW, R_CCW);
     delay(scaled(1400));
-
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop); 
     case3 = false; 
-    
     servoLeft.writeMicroseconds(leftStop); //stop, adjust wheels since it will still move forward a bit
     servoRight.writeMicroseconds(rightStop);
 }
@@ -198,7 +194,7 @@ void deadEnd() {
     
 }
 
-//scen 5
+//Scenario 5
 void leftStart() {
 
     digitalWrite(redLedPinMid, LOW);
@@ -215,9 +211,7 @@ void leftStart() {
 
     unsigned long startTime = millis();
 
-    while (!(distRight - distLeft <= 1) &&
-           (millis() - startTime < scaled(LEFT_START_TIMEOUT_MS))) {
-
+    while (!(distRight - distLeft <= 1) && (millis() - startTime < scaled(LEFT_START_TIMEOUT_MS))) {
         setWheels(L_FWD, R_FWD);
 
         distLeft = irDistance(irLedPinLeft, irReceiverPinLeft);
@@ -225,21 +219,44 @@ void leftStart() {
     }
 
     // Stop
-    setWheels(leftStop, rightStop);
+    servoLeft.writeMicroseconds(leftStop);
+    servoRight.writeMicroseconds(rightStop);
+
     delay(100);
 
     // Rotate anticlockwise to become parallel again
     setWheels(L_CCW, R_CCW);
     delay(scaled(200));
 
+    //reverse to bring it back
+    
+
     // Stop
-    setWheels(leftStop, rightStop);
-    delay(100);
+    servoLeft.writeMicroseconds(leftStop);
+    servoRight.writeMicroseconds(rightStop);
+}
 
-    // Reverse to approximately return to the starting position
-    setWheels(L_REV, R_REV);
-    delay(scaled(200));
+//placeholder - scenario 6 tbc
 
-    // Final stop
-    setWheels(leftStop, rightStop);
+
+
+//Scenario 7
+void LeftWallAtAngle(){
+
+    int distMid = irDistance(irLedPinMid, irReceiverPinMid);
+
+    digitalWrite(redLedPinMid, HIGH);
+    digitalWrite(redLedPinLeft, HIGH);
+    digitalWrite(redLedPinRight, HIGH);
+
+    while(!(distMid == 5)){
+        setWheels(L_CW, R_CW);
+        delay(scaled(20));
+        servoLeft.writeMicroseconds(leftStop);
+        servoRight.writeMicroseconds(rightStop);
+        delay(scaled(20));
+        distMid = irDistance(irLedPinMid, irReceiverPinMid);
+    }
+
+
 }
