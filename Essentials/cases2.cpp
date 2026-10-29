@@ -56,6 +56,9 @@ const int R_CCW = -36;   // 1467 - 1497
 // speed estimates above; pulse offset is not a direct measurement of speed.
 float speedScale = 1.25;
 
+byte deadEndState = 0; // 0: none yet, 1: first completed, 2: permanently stopped.
+byte wigglePhase = 0; // Right, centre, left, centre; repeat while unknown.
+
 void setup() {
   Serial.begin(9600);
 
@@ -81,6 +84,11 @@ void setup() {
 }
 
 void loop() {
+  if (deadEndState == 2) {
+    stopServos();
+    setLeds(HIGH, LOW, LOW);
+    return; // Remain stopped until reset.
+  }
   // Measure left, middle, and right distances
   // dist is 0-5: 5 = farthest from wall, 0 = closest
   int distMid   = irDistance(irLedPinMid, irReceiverPinMid);
@@ -92,18 +100,23 @@ void loop() {
   // 20 cm clear corridor, approximately 8.5 cm between side sensor positions:
   // centred side clearance is about 5.75 cm (zone 3). Straight travel compares
   // the sides within two zones, including 5/5 when wood joins are not detected.
-  // An opening on ONE side with a clearly detected opposite wall takes turn
-  // priority, even with a clear front (zone 5). 4/5 remains straight travel.
+  // With one side open, approach while the front is zone 2-5, then turn
+  // at front zone 0-1. Zone 4 on the opposite side still counts as a wall.
   // Steer gently in case 1; use a separate sideways shift at zone 0 (<= 1.5 cm).
   // After correction, require both sides to reach at least zone 2 before
   // finishing, so small zone fluctuations do not immediately retrigger it.
   // This is a practical tolerance, not a precise measurement of centering.
   // Zone 4 still detects a wall; only 5 means no detection.
   // Zones 0/1/2/3/4 end at 1.5/3/5/10/15 cm.
-  int scenario = 0; // Unknown: stop the wheels, then check again next loop.
+  int scenario = 0; // Unknown: make a small wiggle, then check again next loop.
   if (distMid >= 3 && abs(distLeft - distRight) <= 2) scenario = 1;
-  if (distMid >= 1 && distLeft >= 1 && distLeft <= 3 && distRight == 5) scenario = 2;
-  if (distMid >= 1 && distRight >= 1 && distRight <= 3 && distLeft == 5) scenario = 3;
+  // Approach a corner while the front is still farther away (zones 2-5).
+  // Zone 5 on one side is an opening; zones 1-4 on the other still detect a wall.
+  if (distMid >= 2 && ((distRight == 5 && distLeft >= 1 && distLeft <= 4)
+                   || (distLeft == 5 && distRight >= 1 && distRight <= 4))) scenario = 1;
+  // Turn at front zone 0 or 1; do not drive forward towards the wall first.
+  if (distMid >= 1 && distMid <= 2 && distLeft >= 1 && distLeft <= 4 && distRight == 5) scenario = 2;
+  if (distMid >= 1 && distMid <= 2 && distRight >= 1 && distRight <= 4 && distLeft == 5) scenario = 3;
   if (distMid <= 2 && distLeft >= 1 && distLeft <= 4 && distRight >= 1 && distRight <= 4 && (distLeft <= 3 || distRight <= 3)) scenario = 4;
   if (distMid >= 4 && distLeft == 0 && distRight >= 3 && distRight <= 4) scenario = 5;
   if (distMid >= 4 && distRight == 0 && distLeft >= 3 && distLeft <= 4) scenario = 6;
@@ -130,16 +143,24 @@ void loop() {
   }
 
   /*  Motion control
-    Recheck after every movement. All cases are enabled; case 0 waits.
+    Recheck after every movement. All cases are enabled; case 0 wiggles.
     Only one scenario procedure is executed per loop. If tests overlap,
     the higher scenario number has priority.
   */
+  if (scenario != 0) wigglePhase = 0;
+
   switch (scenario)
   {
-    case 0: // Unknown: stop, then check again on the next loop.
+    case 0: // Unknown: small alternating rotations, sampling between each pulse.
       setLeds(LOW, LOW, LOW);
+      // Approximate offsets from entry heading: right, centre, left, centre.
+      // No forward drive. Equal pulse times assume similar CW/CCW turn speeds.
+      if (wigglePhase == 0 || wigglePhase == 3) setWheels(L_CW, R_CW);
+      else setWheels(L_CCW, R_CCW);
+      delay(60);
       stopServos();
-      break;
+      wigglePhase = (wigglePhase + 1) % 4;
+      break; // loop() reads all three sensors before another pulse.
 
     case 1: // Keep going straight; loop() continuously checks for another case.
     {
@@ -157,10 +178,7 @@ void loop() {
     case 2: // Right 90 degrees, then forward approximately 5 cm.
     {
       setLeds(LOW, HIGH, LOW);
-      if (distMid >= 3) {
-        setWheels(L_FWD, R_FWD);
-        delay(1500); // Placeholder: existing 500 ms approach plus 1 second forward.
-      }
+      // Case 1 already approached the corner while checking sensors.
 
       setWheels(L_CW, R_CW);
       delay((unsigned long)((PI * WHEEL_TRACK_CM * 90.0 / (360.0 * CLOCKWISE_SPEED_CM_S)) * 950));
@@ -176,13 +194,10 @@ void loop() {
     case 3: // Mirror of case 2: left 90 degrees, then forward 5 cm.
     {
       setLeds(LOW, HIGH, HIGH);
-      if (distMid >= 3) {
-        setWheels(L_FWD, R_FWD);
-        delay(1500); // Placeholder: existing 500 ms approach plus 1 second forward.
-      }
+      // Case 1 already approached the corner while checking sensors.
       
       setWheels(L_CCW, R_CCW);
-      delay((unsigned long)((PI * WHEEL_TRACK_CM * 90.0 / (360.0 * ANTICLOCKWISE_SPEED_CM_S)) * 950));
+      delay((unsigned long)((PI * WHEEL_TRACK_CM * 90.0 / (360.0 * ANTICLOCKWISE_SPEED_CM_S)) * 850));
       stopServos();
       delay(100);
 
@@ -192,12 +207,18 @@ void loop() {
       break;
     }
 
-    case 4: // Turn 180 degrees; the next loop decides the forward movement.
+    case 4: // U-turn at the first dead end; stop permanently at the next.
       setLeds(HIGH, LOW, LOW);
+      stopServos();
+      if (deadEndState == 1) {
+        deadEndState = 2;
+        return; // Future loop() calls return before reading any sensors.
+      }
       delay(100);
       setWheels(L_CW, R_CW);
       delay((unsigned long)((PI * WHEEL_TRACK_CM * 180.0 / (360.0 * CLOCKWISE_SPEED_CM_S)) * 950));
       stopServos();
+      deadEndState = 1;
       break;
 
     case 5: // Shift away from the left wall, straighten, then return level with the start.
